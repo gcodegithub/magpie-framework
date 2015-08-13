@@ -1,3 +1,1 @@
-magpie-framework
-====
-magpie eggs framework
+#magpie-framework
