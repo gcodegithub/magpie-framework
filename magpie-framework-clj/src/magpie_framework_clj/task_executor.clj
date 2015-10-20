@@ -1,7 +1,9 @@
 (ns magpie-framework-clj.task-executor
   (:import [java.io File IOException])
   (:require [taoensso.timbre :as timbre]
-            [com.jd.bdp.magpie.util.utils :as utils]))
+            [com.jd.bdp.magpie.util.utils :as magpie-utils]
+            [com.jd.bdp.magpie.util.timer :as magpie-timer]
+            [magpie-framework-clj.utils :as utils]))
 
 (defn execute
   "
@@ -18,7 +20,10 @@
         zk-root (System/getProperty "zookeeper.root")
         pids-dir (System/getProperty "pids.dir")
         job-id (System/getProperty "job.id")
-        job-node (System/getProperty "job.node")]
+        job-node (System/getProperty "job.node")
+        heartbeat-path "/workerbeats/"
+        status-path "/status/"
+        command-path "/commands/"]
     (let [file (File. pids-dir)]
         (if-not (.isDirectory file)
           (try
@@ -26,9 +31,27 @@
             (catch IOException e
               (timbre/error (.toString e))
               (System/exit -1))))
-        (let [pid-file (File. file (utils/get-pid))]
+        (let [pid-file (File. file (magpie-utils/get-pid))]
           (try
             (.createNewFile pid-file)
             (catch IOException e
               (timbre/error (.toString e))
-              (System/exit -1)))))))
+              (System/exit -1)))))
+    (let [zk-str (str zk-servers zk-root)
+          zk-client (utils/zk-new-client zk-str)
+          task-heartbeat-node (str heartbeat-path job-node)
+          task-status-node (str status-path job-node)]
+      (while (not (utils/create-heartbeat-node task-heartbeat-node))
+        (timbre/warn "zk task heartbeat node exists:" task-heartbeat-node)
+        (Thread/sleep 1000))
+      (utils/set-task-status task-status-node (utils/get-task-status :running))
+      (let [action (atom (utils/get-task-command :initial))
+            check-command-timer (magpie-timer/mk-timer)]
+        (magpie-timer/schedule-recurring check-command-timer 1 3
+                                         (fn []
+                                           (try
+                                             ()
+                                             (catch Exception e
+                                               (timbre/error "error accurs in checking command from zookeeper, maybe connection is lost!")
+                                               (timbre/error e)
+                                               (System/exit -1)))))))))
