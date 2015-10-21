@@ -8,6 +8,10 @@
   [zk-str]
   (zk/new-client zk-str))
 
+(defn zk-close
+  []
+  (zk/close))
+
 (defn create-heartbeat-node
   [task-heartbeat-node]
   (try
@@ -19,7 +23,7 @@
         (do (timbre/error e)
             (throw e))))))
 
-(defn get-task-status
+(defn task-status
   [status]
   (case status
     :reloaded "reloaded"
@@ -38,10 +42,9 @@
         (do (timbre/error e)
             (throw e))))))
 
-(defn get-task-command
+(defn task-command
   [command]
   (case command
-    :initial "initial"
     :init "init"
     :run "run"
     :reload "reload"
@@ -49,3 +52,18 @@
     :wait "wait"
     :kill "kill"
     (throw (RuntimeException. (str "task command error! " command)))))
+
+(defn get-task-command
+  [task-command-node]
+  (try
+    (case (magpie-utils/bytes->string (zk/get-data task-command-node))
+      "init" :init
+      "run" :run
+      "reload" :reload
+      "pause" :pause
+      "wait" :wait
+      "kill" :kill
+      (throw (RuntimeException. (str "get task command from zk error!" task-command-node))))
+    (catch Exception e
+      (timbre/error e)
+      (throw e))))
