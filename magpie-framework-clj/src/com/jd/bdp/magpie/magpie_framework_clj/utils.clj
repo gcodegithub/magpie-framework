@@ -1,4 +1,4 @@
-(ns magpie-framework-clj.utils
+(ns com.jd.bdp.magpie.magpie-framework-clj.utils
   (:import [org.apache.zookeeper KeeperException$NodeExistsException KeeperException$NoNodeException])
   (:require [taoensso.timbre :as timbre]
             [clj-zookeeper.zookeeper :as zk]

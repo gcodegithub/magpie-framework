@@ -1,9 +1,9 @@
-(ns magpie-framework-clj.task-executor
+(ns com.jd.bdp.magpie.magpie-framework-clj.task-executor
   (:import [java.io File IOException])
   (:require [taoensso.timbre :as timbre]
             [com.jd.bdp.magpie.util.utils :as magpie-utils]
             [com.jd.bdp.magpie.util.timer :as magpie-timer]
-            [magpie-framework-clj.utils :as utils]))
+            [com.jd.bdp.magpie.magpie-framework-clj.utils :as utils]))
 
 (defn execute
   "
@@ -15,7 +15,7 @@
   pause-fn: 当对系统任务执行pause命令时，会调用这个方法。
   close-fn: 当对系统任务执行kill命令时，会调用这个方法。
   "
-  [{run-fn} & {:keys [prepare-fn reload-fn pause-fn close-fn]}]
+  [run-fn & {:keys [prepare-fn reload-fn pause-fn close-fn]}]
   (let [zk-servers (System/getProperty "zookeeper.servers")
         zk-root (System/getProperty "zookeeper.root")
         pids-dir (System/getProperty "pids.dir")
@@ -25,18 +25,18 @@
         status-path "/status/"
         command-path "/commands/"]
     (let [file (File. pids-dir)]
-        (if-not (.isDirectory file)
-          (try
-            (.mkdirs file)
-            (catch IOException e
-              (timbre/error (.toString e))
-              (System/exit -1))))
-        (let [pid-file (File. file (magpie-utils/get-pid))]
-          (try
-            (.createNewFile pid-file)
-            (catch IOException e
-              (timbre/error (.toString e))
-              (System/exit -1)))))
+      (if-not (.isDirectory file)
+        (try
+          (.mkdirs file)
+          (catch IOException e
+            (timbre/error (.toString e))
+            (System/exit -1))))
+      (let [pid-file (File. file (magpie-utils/get-pid))]
+        (try
+          (.createNewFile pid-file)
+          (catch IOException e
+            (timbre/error (.toString e))
+            (System/exit -1)))))
     
     (try
       (let [zk-str (str zk-servers zk-root)

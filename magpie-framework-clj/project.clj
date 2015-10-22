@@ -1,4 +1,4 @@
-(defproject magpie-framework-clj "0.1.0-SNAPSHOT"
+(defproject com.jd.bdp.magpie/magpie-framework-clj "0.1.0-SNAPSHOT"
   :description "magpie framework for clojure"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
