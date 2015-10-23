@@ -56,7 +56,7 @@
 (defn get-task-command
   [task-command-node]
   (try
-    (case (magpie-utils/bytes->string (zk/get-data task-command-node))
+    (case ((magpie-utils/bytes->string (zk/get-data task-command-node)) "command")
       "init" :init
       "run" :run
       "reload" :reload
