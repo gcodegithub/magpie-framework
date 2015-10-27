@@ -15,7 +15,11 @@
   pause-fn: 当对系统任务执行pause命令时，会调用这个方法。
   close-fn: 当对系统任务执行kill命令时，会调用这个方法。
   "
-  [run-fn & {:keys [prepare-fn reload-fn pause-fn close-fn]}]
+  [run-fn & {:keys [prepare-fn reload-fn pause-fn close-fn]
+             :or {prepare-fn utils/blank-fn
+                  reload-fn utils/blank-fn
+                  pause-fn utils/blank-fn
+                  close-fn utils/blank-fn}}]
   (let [zk-servers (System/getProperty "zookeeper.servers")
         zk-root (System/getProperty "zookeeper.root")
         pids-dir (System/getProperty "pids.dir")

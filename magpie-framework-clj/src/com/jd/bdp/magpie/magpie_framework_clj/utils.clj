@@ -67,3 +67,6 @@
     (catch Exception e
       (timbre/error e)
       (throw e))))
+
+(defn blank-fn
+  [])
