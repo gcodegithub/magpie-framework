@@ -1,6 +1,7 @@
 (ns com.jd.bdp.magpie.magpie-framework-clj.task-executor
   (:import [java.io File IOException])
-  (:require [taoensso.timbre :as timbre]
+  (:require [clojure.tools.logging :as log]
+            
             [com.jd.bdp.magpie.util.utils :as magpie-utils]
             [com.jd.bdp.magpie.util.timer :as magpie-timer]
             [com.jd.bdp.magpie.magpie-framework-clj.utils :as utils]))
@@ -33,13 +34,13 @@
         (try
           (.mkdirs file)
           (catch IOException e
-            (timbre/error (.toString e))
+            (log/error (.toString e))
             (System/exit -1))))
       (let [pid-file (File. file (magpie-utils/get-pid))]
         (try
           (.createNewFile pid-file)
           (catch IOException e
-            (timbre/error (.toString e))
+            (log/error (.toString e))
             (System/exit -1)))))
     
     (try
@@ -49,7 +50,7 @@
             task-status-node (str status-path job-node)
             task-command-node (str command-path job-node)]
         (while (not (utils/create-heartbeat-node task-heartbeat-node))
-          (timbre/warn "zk task heartbeat node exists:" task-heartbeat-node)
+          (log/warn "zk task heartbeat node exists:" task-heartbeat-node)
           (Thread/sleep 1000))
         (utils/set-task-status task-status-node (utils/task-status :running))
         (let [action (atom (utils/get-task-command task-command-node))
@@ -60,12 +61,12 @@
                                              (try
                                                (reset! action (utils/get-task-command task-command-node))
                                                (catch Exception e
-                                                 (timbre/error "error accurs in checking command from zookeeper, maybe connection is lost!")
-                                                 (timbre/error e)
+                                                 (log/error "error accurs in checking command from zookeeper, maybe connection is lost!")
+                                                 (log/error e)
                                                  (System/exit -1)))))
           (loop [act @action]
             (if (= act :kill)
-              (do (timbre/info job-id "command" act "I will exit!")
+              (do (log/info job-id "command" act "I will exit!")
                   (close-fn job-id)
                   (utils/set-task-status task-status-node (utils/task-status :killed)))
               (case act
@@ -74,22 +75,22 @@
                               (do (reload-fn job-id)
                                   (utils/set-task-status task-status-node (utils/task-status :reloaded))
                                   (reset! has-reset true)
-                                  (timbre/info job-id "command" act "has reloaded!")))
+                                  (log/info job-id "command" act "has reloaded!")))
                             (recur @action))
                 :run (do (reset! has-reset false)
                          (try
-                           (timbre/info job-id "command" act "start to prepare")
+                           (log/info job-id "command" act "start to prepare")
                            (prepare-fn job-id)
-                           (timbre/info job-id "command" act "start to run")
+                           (log/info job-id "command" act "start to run")
                            (utils/set-task-status task-status-node (utils/task-status :running))
                            (while (= @action :run)
                              (run-fn job-id))
-                           (timbre/info job-id "command" @action "stop running")
+                           (log/info job-id "command" @action "stop running")
                            (catch Exception e
-                             (timbre/error "error accurs in running process:" e)
+                             (log/error "error accurs in running process:" e)
                              (throw (RuntimeException. e)))
                            (finally
-                             (timbre/info job-id "end running")
+                             (log/info job-id "end running")
                              (close-fn job-id)))
                          (recur @action))
                 :init (recur @action)
@@ -98,15 +99,15 @@
                              (do (pause-fn job-id)
                                  (utils/set-task-status task-status-node (utils/task-status :paused))
                                  (reset! has-reset true)
-                                 (timbre/info job-id "command" act "has paused!")))
+                                 (log/info job-id "command" act "has paused!")))
                            (recur @action))
-                :wait (do (timbre/info job-id "command" act "waiting")
+                :wait (do (log/info job-id "command" act "waiting")
                           (Thread/sleep 5000)
                           (recur @action))
                 (recur @action)))))
       (if-not (nil? zk-client)
         (utils/zk-close)))
-      (timbre/info job-id "This magpie app will be closed!")
+      (log/info job-id "This magpie app will be closed!")
       (catch Throwable e
-        (timbre/error e)
+        (log/error e)
         (System/exit -1)))))

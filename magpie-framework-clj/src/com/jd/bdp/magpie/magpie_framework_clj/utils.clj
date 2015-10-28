@@ -1,6 +1,7 @@
 (ns com.jd.bdp.magpie.magpie-framework-clj.utils
   (:import [org.apache.zookeeper KeeperException$NodeExistsException KeeperException$NoNodeException])
-  (:require [taoensso.timbre :as timbre]
+  (:require [clojure.tools.logging :as log]
+            
             [clj-zookeeper.zookeeper :as zk]
             [com.jd.bdp.magpie.util.utils :as magpie-utils]))
 
@@ -20,7 +21,7 @@
     (catch Exception e
       (if (= (.getClass e) KeeperException$NodeExistsException)
         false
-        (do (timbre/error e)
+        (do (log/error e)
             (throw e))))))
 
 (defn task-status
@@ -39,7 +40,7 @@
     (catch Exception e
       (if (= (.getClass e) KeeperException$NoNodeException)
         (zk/create task-status-node :mode :persistent)
-        (do (timbre/error e)
+        (do (log/error e)
             (throw e))))))
 
 (defn task-command
@@ -65,8 +66,8 @@
       "kill" :kill
       (throw (RuntimeException. (str "get task command from zk error!" task-command-node))))
     (catch Exception e
-      (timbre/error e)
+      (log/error e)
       (throw e))))
 
 (defn blank-fn
-  [])
+  [job-id])
