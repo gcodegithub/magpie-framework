@@ -39,7 +39,8 @@
     (zk/set-data task-status-node (magpie-utils/string->bytes status))
     (catch Exception e
       (if (= (.getClass e) KeeperException$NoNodeException)
-        (zk/create task-status-node :mode :persistent)
+        (do (zk/create task-status-node :mode :persistent)
+            (zk/set-data task-status-node (magpie-utils/string->bytes status))))
         (do (log/error e)
             (throw e))))))
 
