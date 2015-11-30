@@ -40,7 +40,7 @@
     (catch Exception e
       (if (= (.getClass e) KeeperException$NoNodeException)
         (do (zk/create task-status-node :mode :persistent)
-            (zk/set-data task-status-node (magpie-utils/string->bytes status))))
+            (zk/set-data task-status-node (magpie-utils/string->bytes status)))
         (do (log/error e)
             (throw e))))))
 
